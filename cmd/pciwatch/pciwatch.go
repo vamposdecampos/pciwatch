@@ -13,11 +13,10 @@ type renderContext struct {
 	dev *pci.PCI
 }
 
-type propRenderFunc func(ctx *renderContext) string
-
 type propRenderer struct {
-	title string
-	fn    propRenderFunc
+	title    string
+	fn       func(ctx *renderContext) string
+	statusFn func(ctx *renderContext) string
 }
 
 var renderers = []propRenderer{{
@@ -29,6 +28,22 @@ var renderers = []propRenderer{{
 	title: "IDs",
 	fn: func(ctx *renderContext) string {
 		return fmt.Sprintf("%04X:%04x", ctx.dev.Vendor, ctx.dev.Device)
+	},
+}, {
+	title: "Control",
+	fn: func(ctx *renderContext) string {
+		return fmt.Sprintf("%04x", ctx.dev.Control)
+	},
+	statusFn: func(ctx *renderContext) string {
+		return ctx.dev.Control.String()
+	},
+}, {
+	title: "Status",
+	fn: func(ctx *renderContext) string {
+		return fmt.Sprintf("%04x", ctx.dev.Status)
+	},
+	statusFn: func(ctx *renderContext) string {
+		return ctx.dev.Status.String()
 	},
 }}
 
@@ -47,7 +62,8 @@ func main() {
 
 	for rowIdx, r := range renderers {
 		table.SetCell(rowIdx, 0,
-			tview.NewTableCell(r.title))
+			tview.NewTableCell(r.title).
+				SetReference(r))
 	}
 	for devIdx, dev := range devs {
 		for rowIdx, r := range renderers {
@@ -55,7 +71,8 @@ func main() {
 				dev: dev,
 			}
 			table.SetCell(rowIdx, 1+devIdx,
-				tview.NewTableCell(r.fn(&ctx)))
+				tview.NewTableCell(r.fn(&ctx)).
+					SetReference(ctx))
 		}
 	}
 
@@ -69,7 +86,36 @@ func main() {
 			app.Stop()
 		}
 	})
-	if err := app.SetRoot(table, true).EnableMouse(true).Run(); err != nil {
+
+	status := tview.NewTextView().
+		SetText("<status>")
+	flex := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(table, 0, 1, true).
+		AddItem(status, 2, 0, false)
+
+	table.SetSelectionChangedFunc(func(row, column int) {
+		statusText := ""
+		rnd := table.GetCell(row, 0).GetReference().(propRenderer)
+		var cell *tview.TableCell = nil
+		if column > 0 {
+			cell = table.GetCell(row, column)
+		}
+		if cell != nil {
+			ctx := cell.GetReference().(renderContext)
+			if rnd.statusFn != nil {
+				statusText = rnd.statusFn(&ctx)
+			}
+			statusText = fmt.Sprintf("%s - %s\n%s",
+				ctx.dev.VendorName,
+				ctx.dev.DeviceName,
+				statusText,
+			)
+		}
+		status.SetText(statusText)
+	})
+
+	if err := app.SetRoot(flex, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
 	}
 }
