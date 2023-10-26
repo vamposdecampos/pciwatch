@@ -1,8 +1,11 @@
 package main
 
 import (
+	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -47,14 +50,32 @@ var renderers = []propRenderer{{
 	},
 }}
 
+var (
+	readJSON  = flag.String("J", "", "Read JSON in instead of /sys")
+)
+
 func main() {
-	reader, err := pci.NewBusReader()
-	if err != nil {
-		log.Fatal(err)
-	}
-	devs, err := reader.Read() // TODO: filter
-	if err != nil {
-		log.Fatal(err)
+	flag.Parse()
+
+	var devs pci.Devices
+	if len(*readJSON) == 0 {
+		reader, err := pci.NewBusReader()
+		if err != nil {
+			log.Fatal(err)
+		}
+		devs, err = reader.Read() // TODO: filter
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		buf, err := os.ReadFile(*readJSON)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = json.Unmarshal(buf, &devs)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	app := tview.NewApplication()
