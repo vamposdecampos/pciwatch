@@ -55,6 +55,7 @@ type propRenderer struct {
 	title    string
 	fn       func(ctx *renderContext) string
 	statusFn func(ctx *renderContext) string
+	cellFn   func(ctx *renderContext, cell *tview.TableCell)
 }
 
 
@@ -108,6 +109,11 @@ var renderers = []propRenderer{{
 	title: "B:D.F",
 	fn: func(ctx *renderContext) string {
 		return ctx.dev.Addr
+	},
+	cellFn: func(ctx *renderContext, cell *tview.TableCell) {
+		if ctx.dev.Bridge {
+			cell.SetTextColor(tcell.ColorBlue)
+		}
 	},
 }, {
 	title: "IDs",
@@ -182,9 +188,13 @@ func main() {
 			ctx := renderContext{
 				dev: dev,
 			}
-			table.SetCell(rowIdx, 1+devIdx,
-				tview.NewTableCell(r.fn(&ctx)).
-					SetReference(ctx))
+			ctx.ParseCaps()
+			cell := tview.NewTableCell(r.fn(&ctx)).
+				SetReference(ctx)
+			if r.cellFn != nil {
+				r.cellFn(&ctx, cell)
+			}
+			table.SetCell(rowIdx, 1+devIdx, cell)
 		}
 	}
 
