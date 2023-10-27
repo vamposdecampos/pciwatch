@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/binary"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -62,6 +63,7 @@ const (
 	StatusCapList	= 0x10
 	// offsets
 	CapabilityList = 0x34
+	BridgeControl = 0x3e
 )
 
 // TODO: move to pci.PCI
@@ -127,6 +129,15 @@ var renderers = []propRenderer{{
 	},
 	statusFn: func(ctx *renderContext) string {
 		return ctx.dev.Status.String()
+	},
+}, {
+	title: "BrCtl",
+	fn: func(ctx *renderContext) string {
+		if !ctx.dev.Bridge {
+			return ""
+		}
+		brctl := binary.LittleEndian.Uint16(ctx.dev.Config[BridgeControl:BridgeControl+2])
+		return fmt.Sprintf("%04x", brctl)
 	},
 }}
 
