@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"encoding/binary"
 	"encoding/json"
 	"flag"
@@ -11,6 +12,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
 	"github.com/u-root/u-root/pkg/pci"
+	"github.com/lunixbochs/struc"
 )
 
 type capId uint8
@@ -49,6 +51,7 @@ type renderContext struct {
 	dev *pci.PCI
 	capOffset map[capId]uint8
 	extCapOffset map[extCapId]uint32
+	expCap CapExpress
 }
 
 type propRenderer struct {
@@ -105,6 +108,36 @@ func (r *renderContext) ParseCaps() {
 	}
 }
 
+type CapExpress struct {
+	Caps uint16 `struc:"little,uint16"`
+	DevCap uint32 `struc:"little,uint32"`
+	DevCtl uint16 `struc:"little,uint16"`
+	DevSta uint16 `struc:"little,uint16"`
+	LnkCap uint32 `struc:"little,uint32"`
+	LnkCtl uint16 `struc:"little,uint16"`
+	LnkSta uint16 `struc:"little,uint16"`
+	SltCap uint32 `struc:"little,uint32"`
+	SltCtl uint16 `struc:"little,uint16"`
+	SltSta uint16 `struc:"little,uint16"`
+	RootCtl uint16 `struc:"little,uint16"`
+	RootCap uint16 `struc:"little,uint16"`
+	RootSta uint32 `struc:"little,uint32"`
+	DevCap2 uint32 `struc:"little,uint32"`
+	DevCtl2 uint16 `struc:"little,uint16"`
+	DevSta2 uint16 `struc:"little,uint16"`
+	LnkCap2 uint32 `struc:"little,uint32"`
+	LnkCtl2 uint16 `struc:"little,uint16"`
+	LnkSta2 uint16 `struc:"little,uint16"`
+}
+
+func (r *renderContext) GetExpressCaps(cap *CapExpress) error {
+	off, ok := r.capOffset[CapIdExp]
+	if !ok {
+		return fmt.Errorf("no express capability")
+	}
+	return struc.Unpack(bytes.NewReader(r.dev.Config[off+2:]), cap)
+}
+
 var renderers = []propRenderer{{
 	title: "B:D.F",
 	fn: func(ctx *renderContext) string {
@@ -145,6 +178,74 @@ var renderers = []propRenderer{{
 		brctl := binary.LittleEndian.Uint16(ctx.dev.Config[BridgeControl:BridgeControl+2])
 		return fmt.Sprintf("%04x", brctl)
 	},
+}, {
+	title: "Caps",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return "aye"
+	},
+	statusFn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%#v", ctx.capOffset)
+	},
+}, {
+	title: "DevSta",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%04x", ctx.expCap.DevSta)
+	},
+	statusFn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%#v", ctx.expCap)
+	},
+}, {
+	title: "LnkSta",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%04x", ctx.expCap.LnkSta)
+	},
+}, {
+	title: "SltSta",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%04x", ctx.expCap.SltSta)
+	},
+}, {
+	title: "RootSta",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%08x", ctx.expCap.RootSta)
+	},
+}, {
+	title: "DevSta2",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%04x", ctx.expCap.DevSta2)
+	},
+}, {
+	title: "LnkSta2",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%04x", ctx.expCap.LnkSta2)
+	},
 }}
 
 var (
@@ -181,7 +282,8 @@ func main() {
 	for rowIdx, r := range renderers {
 		table.SetCell(rowIdx, 0,
 			tview.NewTableCell(r.title).
-				SetReference(r))
+				// N.B. do not attempt &r
+				SetReference(&renderers[rowIdx]))
 	}
 	for devIdx, dev := range devs {
 		for rowIdx, r := range renderers {
@@ -189,8 +291,9 @@ func main() {
 				dev: dev,
 			}
 			ctx.ParseCaps()
+			ctx.GetExpressCaps(&ctx.expCap)
 			cell := tview.NewTableCell(r.fn(&ctx)).
-				SetReference(ctx)
+				SetReference(&ctx)
 			if r.cellFn != nil {
 				r.cellFn(&ctx, cell)
 			}
@@ -218,15 +321,15 @@ func main() {
 
 	table.SetSelectionChangedFunc(func(row, column int) {
 		statusText := ""
-		rnd := table.GetCell(row, 0).GetReference().(propRenderer)
+		rnd := table.GetCell(row, 0).GetReference().(*propRenderer)
 		var cell *tview.TableCell = nil
 		if column > 0 {
 			cell = table.GetCell(row, column)
 		}
 		if cell != nil {
-			ctx := cell.GetReference().(renderContext)
+			ctx := cell.GetReference().(*renderContext)
 			if rnd.statusFn != nil {
-				statusText = rnd.statusFn(&ctx)
+				statusText = rnd.statusFn(ctx)
 			}
 			statusText = fmt.Sprintf("%s - %s\n%s",
 				ctx.dev.VendorName,

@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/gdamore/tcell/v2 v2.6.0
+	github.com/lunixbochs/struc v0.0.0-20200707160740-784aaebc1d40
 	github.com/rivo/tview v0.0.0-20231007183732-6c844bdc5f7a
 	github.com/u-root/u-root v0.11.0
 )
