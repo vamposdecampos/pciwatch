@@ -12,14 +12,94 @@ import (
 	"github.com/u-root/u-root/pkg/pci"
 )
 
+type capId uint8
+
+const (
+	CapIdNull capId = iota
+	CapIdPm
+	CapIdAgp
+	CapIdVpd
+	CapIdSlotId
+	CapIdMsi
+	CapIdChswp
+	CapIdPcix
+	CapIdHt
+	CapIdVndr
+	CapIdDbg
+	CapIdCcrc
+	CapIdHotplug
+	CapIdSsvid
+	CapIdAgp3
+	CapIdSecure
+	CapIdExp
+	CapIdMsix
+	CapIdSata
+	CapIdAf
+	CapIdEa
+)
+
+type extCapId uint16
+
+const (
+	ExtCapIdNull extCapId = iota
+)
+
 type renderContext struct {
 	dev *pci.PCI
+	capOffset map[capId]uint8
+	extCapOffset map[extCapId]uint32
 }
 
 type propRenderer struct {
 	title    string
 	fn       func(ctx *renderContext) string
 	statusFn func(ctx *renderContext) string
+}
+
+
+const (
+	// Status bits
+	StatusCapList	= 0x10
+	// offsets
+	CapabilityList = 0x34
+)
+
+// TODO: move to pci.PCI
+func (r *renderContext) HasCaps() bool {
+	return r.dev.Status & StatusCapList != 0
+}
+
+func (r *renderContext) ParseCaps() {
+	r.capOffset = make(map[capId]uint8)
+	if !r.HasCaps() {
+		return
+	}
+	var offset uint8 = r.dev.Config[CapabilityList]
+	seen := make(map[uint8]bool)
+	for {
+		offset = offset & 0xfc
+		if offset == 0 {
+			return
+		}
+		_, seenBefore := seen[offset]
+		if seenBefore {
+			// TODO: error
+			break
+		}
+		seen[offset] = true
+
+		if int(offset) + 1 >= len(r.dev.Config) {
+			// TODO: error
+			break
+		}
+		id := r.dev.Config[offset]
+		if id == 0xff {
+			break
+		}
+		next := r.dev.Config[offset + 1]
+		r.capOffset[capId(id)] = offset
+		offset = next
+	}
 }
 
 var renderers = []propRenderer{{
