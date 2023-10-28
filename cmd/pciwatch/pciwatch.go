@@ -215,6 +215,34 @@ var renderers = []propRenderer{{
 		return fmt.Sprintf("%04x", ctx.expCap.LnkSta)
 	},
 }, {
+	title: "  DLActive",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		if ctx.expCap.LnkSta & 0x2000 != 0 {
+			return "+"
+		} else {
+			return "-"
+		}
+	},
+}, {
+	title: "  Speed",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%d", ctx.expCap.LnkSta & 0xf)
+	},
+}, {
+	title: "  Width",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%d", (ctx.expCap.LnkSta & 0x3f0) >> 4)
+	},
+}, {
 	title: "SltSta",
 	fn: func(ctx *renderContext) string {
 		if !ctx.HasCaps() {
