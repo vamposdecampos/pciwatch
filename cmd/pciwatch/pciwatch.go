@@ -278,7 +278,24 @@ var renderers = []propRenderer{{
 
 var (
 	readJSON  = flag.String("J", "", "Read JSON in instead of /sys")
+	horizontal = flag.Bool("H", false, "Horizontal layout (devices in columns)")
 )
+
+func cellRow(propIdx, devIdx int) int {
+	if *horizontal {
+		return propIdx
+	} else {
+		return devIdx
+	}
+}
+
+func cellCol(propIdx, devIdx int) int {
+	if *horizontal {
+		return devIdx
+	} else {
+		return propIdx
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -307,14 +324,16 @@ func main() {
 	app := tview.NewApplication()
 	table := tview.NewTable()
 
-	for rowIdx, r := range renderers {
-		table.SetCell(rowIdx, 0,
+	for idx, r := range renderers {
+		table.SetCell(
+			cellRow(idx, 0),
+			cellCol(idx, 0),
 			tview.NewTableCell(r.title).
 				// N.B. do not attempt &r
-				SetReference(&renderers[rowIdx]))
+				SetReference(&renderers[idx]))
 	}
 	for devIdx, dev := range devs {
-		for rowIdx, r := range renderers {
+		for rndIdx, r := range renderers {
 			ctx := renderContext{
 				dev: dev,
 			}
@@ -325,11 +344,14 @@ func main() {
 			if r.cellFn != nil {
 				r.cellFn(&ctx, cell)
 			}
-			table.SetCell(rowIdx, 1+devIdx, cell)
+			table.SetCell(
+				cellRow(rndIdx, 1+devIdx),
+				cellCol(rndIdx, 1+devIdx),
+				cell)
 		}
 	}
 
-	table.Select(0, 1)
+	table.Select(cellRow(0, 1), cellCol(0, 1))
 	table.SetFixed(1, 1)
 	table.SetSelectable(true, true)
 	// TODO column select? table.SetSelectable(false, true)
@@ -348,11 +370,20 @@ func main() {
 		AddItem(status, 2, 0, false)
 
 	table.SetSelectionChangedFunc(func(row, column int) {
+		var rndCell *tview.TableCell
+		if *horizontal {
+			rndCell = table.GetCell(row, 0)
+		} else {
+			rndCell = table.GetCell(0, column)
+		}
 		statusText := ""
-		rnd := table.GetCell(row, 0).GetReference().(*propRenderer)
-		var cell *tview.TableCell = nil
-		if column > 0 {
-			cell = table.GetCell(row, column)
+		rnd := rndCell.GetReference().(*propRenderer)
+		cell := table.GetCell(row, column)
+		if *horizontal && column == 0 {
+			cell = nil
+		}
+		if !*horizontal && row == 0 {
+			cell = nil
 		}
 		if cell != nil {
 			ctx := cell.GetReference().(*renderContext)
