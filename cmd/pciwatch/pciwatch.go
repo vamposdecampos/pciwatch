@@ -255,6 +255,13 @@ var renderers = []propRenderer{{
 			return "-"
 		}
 	},
+	cellFn: func(ctx *renderContext, cell *tview.TableCell) {
+		if ctx.expCap.LnkSta & 0x2000 != 0 {
+			cell.SetTextColor(tcell.ColorGreen)
+		} else {
+			cell.SetTextColor(tcell.ColorRed)
+		}
+	},
 }, {
 	title: "  Speed",
 	fn: func(ctx *renderContext) string {
