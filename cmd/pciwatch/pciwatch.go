@@ -159,7 +159,7 @@ var renderers = []propRenderer{{
 }, {
 	title: "IDs",
 	fn: func(ctx *renderContext) string {
-		return fmt.Sprintf("%04X:%04x", ctx.dev.Vendor, ctx.dev.Device)
+		return fmt.Sprintf("%04x:%04x", ctx.dev.Vendor, ctx.dev.Device)
 	},
 }, {
 	title: "Control",
