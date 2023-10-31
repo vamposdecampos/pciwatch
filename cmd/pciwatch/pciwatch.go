@@ -207,6 +207,35 @@ var renderers = []propRenderer{{
 		return fmt.Sprintf("%#v", ctx.expCap)
 	},
 }, {
+	title: "  Errors",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		res := ""
+		devsta := ctx.expCap.DevSta
+		if devsta & 1 != 0 {
+			res += "c"
+		}
+		if devsta & 2 != 0 {
+			res += "n"
+		}
+		if devsta & 4 != 0 {
+			res += "f"
+		}
+		if devsta & 8 != 0 {
+			res += "u"
+		}
+		// not errors:
+		if devsta & 0x10 != 0 {
+			res += "x"
+		}
+		if devsta & 0x20 != 0 {
+			res += "t"
+		}
+		return res
+	},
+}, {
 	title: "LnkSta",
 	fn: func(ctx *renderContext) string {
 		if !ctx.HasCaps() {
