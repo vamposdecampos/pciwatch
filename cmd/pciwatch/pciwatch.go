@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -365,10 +366,14 @@ func main() {
 	table := tview.NewTable()
 
 	for idx, r := range renderers {
+		title := r.title
+		if !*horizontal {
+			title = strings.TrimSpace(title)
+		}
 		table.SetCell(
 			cellRow(idx, 0),
 			cellCol(idx, 0),
-			tview.NewTableCell(r.title).
+			tview.NewTableCell(title).
 				// N.B. do not attempt &r
 				SetReference(&renderers[idx]))
 	}
