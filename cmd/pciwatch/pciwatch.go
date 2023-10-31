@@ -377,6 +377,8 @@ func main() {
 
 	app := tview.NewApplication()
 	table := tview.NewTable()
+	status := tview.NewTextView().
+		SetText("<status>")
 
 	for idx, r := range renderers {
 		title := r.title
@@ -416,25 +418,37 @@ func main() {
 		return maxDev
 	}
 
-	for _, dev := range devs {
-		devIdx := devRank(dev.Addr)
-		for rndIdx, r := range renderers {
-			ctx := renderContext{
-				dev: dev,
+	go (func() {
+		for {
+			for _, dev := range devs {
+				ctx := renderContext{
+					dev: dev,
+				}
+				ctx.ParseCaps()
+				ctx.GetExpressCaps(&ctx.expCap)
+				app.QueueUpdateDraw(func() {
+					devIdx := devRank(dev.Addr)
+					for rndIdx, r := range renderers {
+						cell := tview.NewTableCell(r.fn(&ctx)).
+							SetReference(&ctx)
+						if r.cellFn != nil {
+							r.cellFn(&ctx, cell)
+						}
+						table.SetCell(
+							cellRow(rndIdx, devIdx),
+							cellCol(rndIdx, devIdx),
+							cell)
+					}
+				});
 			}
-			ctx.ParseCaps()
-			ctx.GetExpressCaps(&ctx.expCap)
-			cell := tview.NewTableCell(r.fn(&ctx)).
-				SetReference(&ctx)
-			if r.cellFn != nil {
-				r.cellFn(&ctx, cell)
+			if len(*readJSON) != 0 {
+				return
 			}
-			table.SetCell(
-				cellRow(rndIdx, devIdx),
-				cellCol(rndIdx, devIdx),
-				cell)
+			// TODO: sleep?
+			// TODO: errors
+			devs.ReadConfig()
 		}
-	}
+	})();
 
 	table.Select(cellRow(0, 1), cellCol(0, 1))
 	table.SetFixed(1, 1)
@@ -447,8 +461,6 @@ func main() {
 		}
 	})
 
-	status := tview.NewTextView().
-		SetText("<status>")
 	flex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(table, 0, 1, true).
