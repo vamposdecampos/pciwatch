@@ -162,6 +162,16 @@ var renderers = []propRenderer{{
 		return fmt.Sprintf("%04x:%04x", ctx.dev.Vendor, ctx.dev.Device)
 	},
 }, {
+	title: "Sec",
+	fn: func(ctx *renderContext) string {
+		if !ctx.dev.Bridge {
+			return ""
+		}
+		return fmt.Sprintf("%02x-%02x",
+			ctx.dev.Secondary,
+			ctx.dev.Subordinate)
+	},
+}, {
 	title: "Control",
 	fn: func(ctx *renderContext) string {
 		return fmt.Sprintf("%04x", ctx.dev.Control)
