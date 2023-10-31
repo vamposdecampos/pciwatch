@@ -390,7 +390,34 @@ func main() {
 				// N.B. do not attempt &r
 				SetReference(&renderers[idx]))
 	}
-	for devIdx, dev := range devs {
+
+	devRank := func(bdf string) int {
+		var maxDev int
+		if *horizontal {
+			maxDev = table.GetColumnCount()
+		} else {
+			maxDev = table.GetRowCount()
+		}
+		for i := 1; i < maxDev; i++ {
+			// FIXME: assumes B:D.F is first renderer
+			cell := table.GetCell(cellRow(0, i), cellCol(0, i))
+			if cell.Text == bdf {
+				return i
+			}
+			if cell.Text > bdf {
+				if *horizontal {
+					table.InsertColumn(i)
+				} else {
+					table.InsertRow(i)
+				}
+				return i
+			}
+		}
+		return maxDev
+	}
+
+	for _, dev := range devs {
+		devIdx := devRank(dev.Addr)
 		for rndIdx, r := range renderers {
 			ctx := renderContext{
 				dev: dev,
@@ -403,8 +430,8 @@ func main() {
 				r.cellFn(&ctx, cell)
 			}
 			table.SetCell(
-				cellRow(rndIdx, 1+devIdx),
-				cellCol(rndIdx, 1+devIdx),
+				cellRow(rndIdx, devIdx),
+				cellCol(rndIdx, devIdx),
 				cell)
 		}
 	}
