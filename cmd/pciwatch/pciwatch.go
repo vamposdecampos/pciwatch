@@ -75,6 +75,14 @@ func (r *renderContext) HasCaps() bool {
 	return r.dev.Status & StatusCapList != 0
 }
 
+func ternS(value bool, trueS, falseS string) string {
+	if (value) {
+		return trueS;
+	} else {
+		return falseS;
+	}
+}
+
 func (r *renderContext) ParseCaps() {
 	r.capOffset = make(map[capId]uint8)
 	if !r.HasCaps() {
@@ -212,28 +220,14 @@ var renderers = []propRenderer{{
 		if !ctx.HasCaps() {
 			return ""
 		}
-		res := ""
 		devsta := ctx.expCap.DevSta
-		if devsta & 1 != 0 {
-			res += "c"
-		}
-		if devsta & 2 != 0 {
-			res += "n"
-		}
-		if devsta & 4 != 0 {
-			res += "f"
-		}
-		if devsta & 8 != 0 {
-			res += "u"
-		}
-		// not errors:
-		if devsta & 0x10 != 0 {
-			res += "x"
-		}
-		if devsta & 0x20 != 0 {
-			res += "t"
-		}
-		return res
+		return ternS(devsta & 1 != 0, "c", " ") +
+			ternS(devsta & 2 != 0, "n", " ") +
+			ternS(devsta & 4 != 0, "f", " ") +
+			ternS(devsta & 8 != 0, "u", " ") +
+			// not errors:
+			ternS(devsta & 0x10 != 0, "x", " ") +
+			ternS(devsta & 0x20 != 0, "t", " ");
 	},
 }, {
 	title: "LnkSta",
