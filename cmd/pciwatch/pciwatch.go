@@ -444,6 +444,16 @@ func main() {
 		status.SetText(statusText)
 	})
 
+	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if (event.Key() == tcell.KeyRune) {
+			switch event.Rune() {
+			case 'Q':
+				app.Stop();
+			}
+		}
+		return event;
+	});
+
 	if err := app.SetRoot(flex, true).EnableMouse(true).Run(); err != nil {
 		panic(err)
 	}
