@@ -168,9 +168,11 @@ var renderers = []propRenderer{{
 		if !ctx.dev.Bridge {
 			return ""
 		}
-		return fmt.Sprintf("%02x-%02x",
-			ctx.dev.Secondary,
-			ctx.dev.Subordinate)
+		res := fmt.Sprintf("%02x", ctx.dev.Secondary)
+		if ctx.dev.Subordinate != ctx.dev.Secondary {
+			res += fmt.Sprintf("-%02x", ctx.dev.Subordinate)
+		}
+		return res
 	},
 }, {
 	title: "Control",
