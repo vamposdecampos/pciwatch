@@ -317,6 +317,17 @@ var renderers = []propRenderer{{
 	},
 }}
 
+
+func (ctx *renderContext) ToggleSBR() {
+	if *readJSON != "" {
+		return // nop
+	}
+	// TODO: errors
+	brctl, _ := ctx.dev.ReadConfigRegister(BridgeControl, 16)
+	brctl ^= 0x40
+	ctx.dev.WriteConfigRegister(BridgeControl, 16, brctl)
+}
+
 var (
 	readJSON  = flag.String("J", "", "Read JSON in instead of /sys")
 	horizontal = flag.Bool("H", false, "Horizontal layout (devices in columns)")
@@ -446,7 +457,22 @@ func main() {
 
 	table.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if (event.Key() == tcell.KeyRune) {
+			r, c := table.GetSelection()
+			cell := table.GetCell(r, c)
+			if *horizontal && c == 0 {
+				cell = nil
+			}
+			if !*horizontal && r == 0 {
+				cell = nil
+			}
+			if cell == nil {
+				// nothing to do
+				return event;
+			}
+			ctx := cell.GetReference().(*renderContext)
 			switch event.Rune() {
+			case 'R':
+				ctx.ToggleSBR()
 			case 'Q':
 				app.Stop();
 			}
