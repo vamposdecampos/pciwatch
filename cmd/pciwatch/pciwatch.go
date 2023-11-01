@@ -200,6 +200,14 @@ var renderers = []propRenderer{{
 		brctl := binary.LittleEndian.Uint16(ctx.dev.Config[BridgeControl:BridgeControl+2])
 		return fmt.Sprintf("%04x", brctl)
 	},
+	cellFn: func(ctx *renderContext, cell *tview.TableCell) {
+		brctl := binary.LittleEndian.Uint16(ctx.dev.Config[BridgeControl:BridgeControl+2])
+		if brctl & 0x40 != 0 {
+			cell.SetTextColor(tcell.ColorRed)
+		} else {
+			cell.SetTextColor(tcell.ColorDefault)
+		}
+	},
 /*
 }, {
 	title: "Caps",
@@ -295,6 +303,13 @@ var renderers = []propRenderer{{
 			return ""
 		}
 		return fmt.Sprintf("%04x", ctx.expCap.LnkCtl)
+	},
+	cellFn: func(ctx *renderContext, cell *tview.TableCell) {
+		if ctx.expCap.LnkCtl & 0x10 != 0 {
+			cell.SetTextColor(tcell.ColorRed)
+		} else {
+			cell.SetTextColor(tcell.ColorDefault)
+		}
 	},
 }, {
 	title: "LnkSta2",
