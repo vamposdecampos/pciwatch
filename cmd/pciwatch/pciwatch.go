@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/gdamore/tcell/v2"
 	"github.com/rivo/tview"
@@ -379,6 +380,7 @@ func main() {
 	table := tview.NewTable()
 	status := tview.NewTextView().
 		SetText("<status>")
+	fps := tview.NewTextView().SetText("<fps>")
 
 	for idx, r := range renderers {
 		title := r.title
@@ -420,6 +422,9 @@ func main() {
 
 	go (func() {
 		for {
+			//time.Sleep(time.Millisecond * 100)
+			// TODO: sleep?
+			t1 := time.Now()
 			for _, dev := range devs {
 				ctx := renderContext{
 					dev: dev,
@@ -444,9 +449,12 @@ func main() {
 			if len(*readJSON) != 0 {
 				return
 			}
-			// TODO: sleep?
 			// TODO: errors
 			devs.ReadConfig()
+			delta := time.Since(t1)
+			app.QueueUpdateDraw(func() {
+				fps.SetText(fmt.Sprintf("%v", delta.Round(time.Millisecond)))
+			});
 		}
 	})();
 
@@ -461,10 +469,14 @@ func main() {
 		}
 	})
 
+	hbox := tview.NewFlex().
+		SetDirection(tview.FlexColumn).
+		AddItem(status, 0, 1, true).
+		AddItem(fps, 10, 0, false)
 	flex := tview.NewFlex().
 		SetDirection(tview.FlexRow).
 		AddItem(table, 0, 1, true).
-		AddItem(status, 2, 0, false)
+		AddItem(hbox, 2, 0, false)
 
 	table.SetSelectionChangedFunc(func(row, column int) {
 		var rndCell *tview.TableCell
