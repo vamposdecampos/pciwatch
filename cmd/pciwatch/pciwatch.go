@@ -165,9 +165,11 @@ var renderers = []propRenderer{{
 		return fmt.Sprintf("%04x:%04x", ctx.dev.Vendor, ctx.dev.Device)
 	},
 	statusFn: func(ctx *renderContext) string {
-		return fmt.Sprintf("class 0x%08x  rev 0x%02x",
+		return fmt.Sprintf("class 0x%08x  rev 0x%02x  exp 0x%04x sltcap 0x%04x",
 			ctx.dev.Class,
 			ctx.dev.Config[pci.RevisionID],
+			ctx.expCap.Caps,
+			ctx.expCap.SltCap,
 		)
 	},
 }, {
