@@ -287,6 +287,30 @@ var renderers = []propRenderer{{
 		return fmt.Sprintf("%d", (ctx.expCap.LnkSta & 0x3f0) >> 4)
 	},
 }, {
+	title: "LnkCtl",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%04x", ctx.expCap.LnkCtl)
+	},
+}, {
+	title: "LnkSta2",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%04x", ctx.expCap.LnkSta2)
+	},
+}, {
+	title: "LnkCtl2",
+	fn: func(ctx *renderContext) string {
+		if !ctx.HasCaps() {
+			return ""
+		}
+		return fmt.Sprintf("%04x", ctx.expCap.LnkCtl2)
+	},
+}, {
 	title: "SltSta",
 	fn: func(ctx *renderContext) string {
 		if !ctx.HasCaps() {
@@ -309,14 +333,6 @@ var renderers = []propRenderer{{
 			return ""
 		}
 		return fmt.Sprintf("%04x", ctx.expCap.DevSta2)
-	},
-}, {
-	title: "LnkSta2",
-	fn: func(ctx *renderContext) string {
-		if !ctx.HasCaps() {
-			return ""
-		}
-		return fmt.Sprintf("%04x", ctx.expCap.LnkSta2)
 	},
 }}
 
