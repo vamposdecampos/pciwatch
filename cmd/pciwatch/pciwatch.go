@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -414,6 +415,7 @@ func (ctx *renderContext) EnterCompliance(on bool) {
 }
 
 var (
+	filterRE  = flag.String("r", ".*", "Regex to filter devices")
 	readJSON  = flag.String("J", "", "Read JSON in instead of /sys")
 	horizontal = flag.Bool("H", false, "Horizontal layout (devices in columns)")
 )
@@ -434,8 +436,21 @@ func cellCol(propIdx, devIdx int) int {
 	}
 }
 
+var filter *regexp.Regexp
+
+func filterDevs(p *pci.PCI) bool {
+	slug := fmt.Sprintf("%s v%04x d%04x c%08x",
+		p.Addr,
+		p.Vendor,
+		p.Device,
+		p.Class,
+	)
+	return filter.MatchString(slug)
+}
+
 func main() {
 	flag.Parse()
+	filter = regexp.MustCompile(*filterRE)
 
 	var devs pci.Devices
 	if len(*readJSON) == 0 {
@@ -443,7 +458,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		devs, err = reader.Read() // TODO: filter
+		devs, err = reader.Read(filterDevs)
 		if err != nil {
 			log.Fatal(err)
 		}
