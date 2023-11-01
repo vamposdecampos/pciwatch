@@ -200,6 +200,7 @@ var renderers = []propRenderer{{
 		brctl := binary.LittleEndian.Uint16(ctx.dev.Config[BridgeControl:BridgeControl+2])
 		return fmt.Sprintf("%04x", brctl)
 	},
+/*
 }, {
 	title: "Caps",
 	fn: func(ctx *renderContext) string {
@@ -214,6 +215,7 @@ var renderers = []propRenderer{{
 		}
 		return fmt.Sprintf("%#v", ctx.capOffset)
 	},
+*/
 }, {
 	title: "DevSta",
 	fn: func(ctx *renderContext) string {
