@@ -353,7 +353,7 @@ var renderers = []propRenderer{{
 	},
 }}
 
-
+// BRIDGE_CONTROL=40:40
 func (ctx *renderContext) ToggleSBR() {
 	if *readJSON != "" {
 		return // nop
@@ -362,6 +362,55 @@ func (ctx *renderContext) ToggleSBR() {
 	brctl, _ := ctx.dev.ReadConfigRegister(BridgeControl, 16)
 	brctl ^= 0x40
 	ctx.dev.WriteConfigRegister(BridgeControl, 16, brctl)
+}
+
+// CAP_EXP+10.w=10:10
+func (ctx *renderContext) ToggleLink() {
+	if *readJSON != "" {
+		return // nop
+	}
+	off, ok := ctx.capOffset[CapIdExp]
+	if !ok {
+		return
+	}
+	// TODO: errors
+	lnkctl, _ := ctx.dev.ReadConfigRegister(int64(off) + 0x10, 16)
+	lnkctl ^= 0x10
+	ctx.dev.WriteConfigRegister(int64(off) + 0x10, 16, lnkctl)
+}
+
+// CAP_EXP+10.w=20:20
+func (ctx *renderContext) Retrain() {
+	if *readJSON != "" {
+		return // nop
+	}
+	off, ok := ctx.capOffset[CapIdExp]
+	if !ok {
+		return
+	}
+	// TODO: errors
+	lnkctl, _ := ctx.dev.ReadConfigRegister(int64(off) + 0x10, 16)
+	lnkctl |= 0x20
+	ctx.dev.WriteConfigRegister(int64(off) + 0x10, 16, lnkctl)
+}
+
+// CAP_EXP+30.w=10:10
+func (ctx *renderContext) EnterCompliance(on bool) {
+	if *readJSON != "" {
+		return // nop
+	}
+	off, ok := ctx.capOffset[CapIdExp]
+	if !ok {
+		return
+	}
+	// TODO: check for express v2
+	// TODO: errors
+	lnkctl2, _ := ctx.dev.ReadConfigRegister(int64(off) + 0x30, 16)
+	lnkctl2 |= 0x10
+	if !on {
+		lnkctl2 ^= 0x10
+	}
+	ctx.dev.WriteConfigRegister(int64(off) + 0x30, 16, lnkctl2)
 }
 
 var (
@@ -559,6 +608,14 @@ func main() {
 			switch event.Rune() {
 			case 'R':
 				ctx.ToggleSBR()
+			case 'L':
+				ctx.ToggleLink()
+			case 'r':
+				ctx.Retrain()
+			case 'C':
+				ctx.EnterCompliance(true)
+			case 'c':
+				ctx.EnterCompliance(false)
 			case 'Q':
 				app.Stop();
 			}
