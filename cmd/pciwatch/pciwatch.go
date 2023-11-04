@@ -353,6 +353,13 @@ var renderers = []propRenderer{{
 		}
 		return fmt.Sprintf("%04x", ctx.expCap.LnkCtl2)
 	},
+	cellFn: func(ctx *renderContext, cell *tview.TableCell) {
+		if ctx.expCap.LnkCtl2 & 0x10 != 0 {
+			cell.SetTextColor(tcell.ColorYellow)
+		} else {
+			cell.SetTextColor(tview.Styles.PrimaryTextColor)
+		}
+	},
 }, {
 	title: "SltSta",
 	fn: func(ctx *renderContext) string {
