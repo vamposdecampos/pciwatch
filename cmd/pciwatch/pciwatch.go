@@ -79,6 +79,10 @@ func (r *renderContext) HasCaps() bool {
 	return r.dev.Status & StatusCapList != 0
 }
 
+func (r *renderContext) HasExpV2() bool {
+	return r.HasCaps() && (r.expCap.Caps & 0xf >= 2)
+}
+
 func ternS(value bool, trueS, falseS string) string {
 	if (value) {
 		return trueS;
@@ -340,7 +344,7 @@ var renderers = []propRenderer{{
 }, {
 	title: "LnkSta2",
 	fn: func(ctx *renderContext) string {
-		if !ctx.HasCaps() {
+		if !ctx.HasExpV2() {
 			return ""
 		}
 		return fmt.Sprintf("%04x", ctx.expCap.LnkSta2)
@@ -348,7 +352,7 @@ var renderers = []propRenderer{{
 }, {
 	title: "LnkCtl2",
 	fn: func(ctx *renderContext) string {
-		if !ctx.HasCaps() {
+		if !ctx.HasExpV2() {
 			return ""
 		}
 		return fmt.Sprintf("%04x", ctx.expCap.LnkCtl2)
@@ -379,7 +383,7 @@ var renderers = []propRenderer{{
 }, {
 	title: "DevSta2",
 	fn: func(ctx *renderContext) string {
-		if !ctx.HasCaps() {
+		if !ctx.HasExpV2() {
 			return ""
 		}
 		return fmt.Sprintf("%04x", ctx.expCap.DevSta2)
