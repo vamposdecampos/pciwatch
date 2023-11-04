@@ -55,6 +55,7 @@ type renderContext struct {
 	capOffset map[capId]uint8
 	extCapOffset map[extCapId]uint32
 	expCap CapExpress
+	cfgErr error
 }
 
 type propRenderer struct {
@@ -155,9 +156,25 @@ var renderers = []propRenderer{{
 		return ctx.dev.Addr
 	},
 	cellFn: func(ctx *renderContext, cell *tview.TableCell) {
-		if ctx.dev.Bridge {
-			cell.SetTextColor(tcell.ColorBlue)
-		}
+		pickColor := func () tcell.Color {
+			if ctx.cfgErr != nil {
+				return tcell.ColorRed
+			}
+			if ctx.dev.Bridge {
+				if ctx.expCap.Caps & 0x0100 != 0 { // slot implemented
+					if ctx.expCap.SltCap & 0x0040 != 0 { // HotPlug+
+						// slot and hotplug
+						return tcell.ColorDarkCyan
+					}
+					// slot, but not hotplug
+					return tcell.ColorBlue
+				}
+				// non-slot bridge
+				return tcell.ColorYellow
+			}
+			return tview.Styles.PrimaryTextColor
+		};
+		cell.SetTextColor(pickColor())
 	},
 }, {
 	title: "IDs",
@@ -526,6 +543,7 @@ func main() {
 	}
 
 	go (func() {
+		realHW := len(*readJSON) == 0
 		for {
 			//time.Sleep(time.Millisecond * 100)
 			// TODO: sleep?
@@ -533,6 +551,9 @@ func main() {
 			for _, dev := range devs {
 				ctx := renderContext{
 					dev: dev,
+				}
+				if realHW {
+					ctx.cfgErr = dev.ReadConfig()
 				}
 				ctx.ParseCaps()
 				ctx.GetExpressCaps(&ctx.expCap)
@@ -551,11 +572,10 @@ func main() {
 					}
 				});
 			}
-			if len(*readJSON) != 0 {
+			if !realHW {
 				return
 			}
 			// TODO: errors
-			devs.ReadConfig()
 			delta := time.Since(t1)
 			app.QueueUpdateDraw(func() {
 				fps.SetText(fmt.Sprintf("%v", delta.Round(time.Millisecond)))
@@ -601,7 +621,9 @@ func main() {
 		}
 		if cell != nil {
 			ctx := cell.GetReference().(*renderContext)
-			if rnd.statusFn != nil {
+			if ctx.cfgErr != nil {
+				statusText = fmt.Sprintf("cfg read error: %s", ctx.cfgErr)
+			} else if rnd.statusFn != nil {
 				statusText = rnd.statusFn(ctx)
 			}
 			statusText = fmt.Sprintf("%s - %s\n%s",
