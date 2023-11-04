@@ -573,6 +573,13 @@ func main() {
 					for rndIdx, r := range renderers {
 						cell := tview.NewTableCell(r.fn(&ctx)).
 							SetReference(&ctx)
+						if rndIdx > 0 {
+							if ctx.cfgErr == nil {
+								cell.SetTextColor(tview.Styles.PrimaryTextColor)
+							} else {
+								cell.SetTextColor(tcell.ColorGray)
+							}
+						}
 						if r.cellFn != nil {
 							r.cellFn(&ctx, cell)
 						}
