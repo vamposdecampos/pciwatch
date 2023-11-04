@@ -231,7 +231,7 @@ var renderers = []propRenderer{{
 		if brctl & 0x40 != 0 {
 			cell.SetTextColor(tcell.ColorRed)
 		} else {
-			cell.SetTextColor(tcell.ColorDefault)
+			cell.SetTextColor(tview.Styles.PrimaryTextColor)
 		}
 	},
 /*
@@ -334,7 +334,7 @@ var renderers = []propRenderer{{
 		if ctx.expCap.LnkCtl & 0x10 != 0 {
 			cell.SetTextColor(tcell.ColorRed)
 		} else {
-			cell.SetTextColor(tcell.ColorDefault)
+			cell.SetTextColor(tview.Styles.PrimaryTextColor)
 		}
 	},
 }, {
